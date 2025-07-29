@@ -85,7 +85,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     await db.collection("bookings").add(bookingData);
     document.getElementById("message").textContent = "Booking successful!";
     document.getElementById("form").reset();
-    timeSelect.innerHTML = '<option value="">Select Time</option>';
+    loadAvailableTimeSlots(); // Refresh available times
   } catch (error) {
     console.error("Error booking:", error);
     document.getElementById("message").textContent = "Error saving booking. Please try again.";
