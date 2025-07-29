@@ -82,12 +82,30 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   };
 
   try {
-    await db.collection("bookings").add(bookingData);
-    document.getElementById("message").textContent = "Booking successful!";
-    document.getElementById("form").reset();
+  // Check if a booking already exists for the same date, time, and barber
+  const existing = await db.collection("bookings")
+    .where("date", "==", date)
+    .where("barber", "==", barber)
+    .where("time", "==", time)
+    .get();
+
+  if (!existing.empty) {
+    document.getElementById("message").textContent = "Sorry, that time is already booked. Please choose another.";
+    document.getElementById("message").style.color = "red";
     loadAvailableTimeSlots(); // Refresh available times
-  } catch (error) {
-    console.error("Error booking:", error);
-    document.getElementById("message").textContent = "Error saving booking. Please try again.";
+    return;
   }
+
+  // If no conflict, save the new booking
+  await db.collection("bookings").add(bookingData);
+  document.getElementById("message").textContent = "Booking successful!";
+  document.getElementById("message").style.color = "green";
+  document.getElementById("form").reset();
+  loadAvailableTimeSlots(); // Refresh available times
+} catch (error) {
+  console.error("Error booking:", error);
+  document.getElementById("message").textContent = "Error saving booking. Please try again.";
+  document.getElementById("message").style.color = "red";
+}
+
 });
