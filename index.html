@@ -1,76 +1,48 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ze Elias Barbershop</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            background: 'hsl(220, 13%, 7%)',
-            foreground: 'hsl(40, 5%, 96%)',
-            card: 'hsl(220, 13%, 9%)',
-            gold: 'hsl(45, 93%, 58%)',
-            'gold-muted': 'hsl(45, 70%, 48%)',
-            charcoal: 'hsl(220, 13%, 7%)',
-            'charcoal-light': 'hsl(220, 13%, 12%)'
-          },
-          borderRadius: {
-            DEFAULT: '0.75rem'
-          },
-          boxShadow: {
-            elegant: '0 20px 40px -15px hsla(220, 13%, 4%, 0.5)',
-            gold: '0 10px 30px -5px hsla(45, 93%, 58%, 0.3)'
-          },
-          transitionTimingFunction: {
-            smooth: 'cubic-bezier(0.4, 0, 0.2, 1)'
-          }
-        }
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
-<body class="bg-background text-foreground font-serif">
-  <header class="text-center py-20 bg-gradient-to-br from-charcoal to-charcoal-light shadow-elegant">
-    <h1 class="text-4xl font-bold text-gold mb-4">Ze Elias Barbershop</h1>
-    <p class="text-lg text-foreground">Precision cuts & classic style. Book your appointment below.</p>
-    <button onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'})" class="mt-6 bg-gold text-charcoal px-6 py-3 rounded-lg shadow-gold transition duration-300 ease-smooth hover:bg-gold-muted">
+<body>
+  <header class="hero">
+    <h1>Ze Elias Barbershop</h1>
+    <p>Precision cuts & classic style. Book your appointment below.</p>
+    <button onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'})">
       Book Now
     </button>
   </header>
 
-  <section id="booking" class="max-w-xl mx-auto mt-12 p-6 rounded-xl bg-card shadow-elegant">
-    <h2 class="text-2xl font-semibold text-gold text-center mb-6">Book an Appointment</h2>
-    <form id="form" class="space-y-4">
-      <input type="text" id="name" placeholder="Your Name" required class="w-full p-3 rounded-lg bg-charcoal-light text-foreground border border-border"/>
-      <input type="tel" id="phone" placeholder="Phone Number" required class="w-full p-3 rounded-lg bg-charcoal-light text-foreground border border-border"/>
-      <select id="service" required class="w-full p-3 rounded-lg bg-charcoal-light text-foreground border border-border">
+  <section id="booking" class="booking-form">
+    <h2>Book an Appointment</h2>
+    <form id="form">
+      <input type="text" id="name" placeholder="Your Name" required />
+      <input type="tel" id="phone" placeholder="Phone Number" required />
+      <select id="service" required>
         <option value="">Select Service</option>
         <option value="Haircut">Haircut (€10)</option>
         <option value="Beard Trim">Beard Trim (€5)</option>
       </select>
-      <select id="barber" required class="w-full p-3 rounded-lg bg-charcoal-light text-foreground border border-border">
+      <select id="barber" required>
         <option value="">Select Barber</option>
         <option value="Elias">Elias</option>
         <option value="George">George</option>
         <option value="Charalambos">Charalambos</option>
       </select>
-      <input type="date" id="date" required class="w-full p-3 rounded-lg bg-charcoal-light text-foreground border border-border"/>
-      <select id="time" required class="w-full p-3 rounded-lg bg-charcoal-light text-foreground border border-border">
+      <input type="date" id="date" required />
+      <select id="time" required>
         <option value="">Select Time</option>
       </select>
-      <button type="submit" class="w-full bg-gold text-charcoal font-semibold py-3 rounded-lg shadow-gold hover:bg-gold-muted transition duration-300 ease-smooth">
-        Submit Booking
-      </button>
+      <button type="submit">Submit Booking</button>
     </form>
-    <p id="message" class="text-center text-green-400 font-medium mt-4"></p>
+    <p id="message"></p>
   </section>
 
-  <footer class="text-center mt-20 p-6 text-foreground text-sm bg-charcoal-light">
+  <footer>
     <p><strong>About Us:</strong> Ze Elias Barbershop offers expert grooming with a classic touch. Dedicated to precision and style for every client.</p>
     <p><strong>Address:</strong> Idaliou, Poli Chrysochous 8820, Cyprus</p>
     <p><strong>Phone:</strong> +357 96 395320</p>
