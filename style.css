@@ -5,6 +5,9 @@
   box-sizing: border-box;
   font-family: 'Georgia', serif;
 }
+body {
+  font-family: 'Montserrat', sans-serif;
+}
 
 body {
   background-color: #f9f6f1;
