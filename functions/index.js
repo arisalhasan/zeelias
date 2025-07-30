@@ -1,17 +1,23 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const twilio = require("twilio");
-require("dotenv").config(); // Load variables from .env
+require("dotenv").config();
 
 admin.initializeApp();
 
-// ✅ Use environment variables securely
-const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
-const twilioNumber = process.env.TWILIO_PHONE; // Also from .env
+const accountSid = process.env.TWILIO_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioNumber = process.env.TWILIO_PHONE;
 
-// 📲 Cloud Function to send SMS
-exports.sendBookingSMS = functions.https.onCall(async (data, context) => {
-  const { phone, message } = data;
+const client = twilio(accountSid, authToken);
+
+// Use onRequest instead of onCall
+exports.sendBookingSMS = functions.https.onRequest(async (req, res) => {
+  const { phone, message } = req.body;
+
+  if (!phone || !message) {
+    return res.status(400).json({ success: false, error: "Missing phone or message" });
+  }
 
   try {
     await client.messages.create({
@@ -19,9 +25,9 @@ exports.sendBookingSMS = functions.https.onCall(async (data, context) => {
       from: twilioNumber,
       to: phone,
     });
-    return { success: true };
+    return res.status(200).json({ success: true });
   } catch (error) {
     console.error("SMS send failed:", error);
-    return { success: false, error: error.message };
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
