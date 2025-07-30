@@ -1,5 +1,17 @@
 // Disable Thursdays & Sundays
 const dateInput = document.getElementById("date");
+// Set min and max selectable dates (today to 1 month from today)
+const today = new Date();
+const maxDate = new Date();
+maxDate.setMonth(today.getMonth() + 1);
+
+// Format as YYYY-MM-DD
+const formattedToday = today.toISOString().split("T")[0];
+const formattedMax = maxDate.toISOString().split("T")[0];
+
+dateInput.min = formattedToday;
+dateInput.max = formattedMax;
+
 const timeSelect = document.getElementById("time");
 const barberSelect = document.getElementById("barber");
 
