@@ -87,6 +87,26 @@
           resultsDiv.innerHTML = '<p class="text-red-500">Error loading bookings. Check console for details.</p>';
         });
     }
+
+    // 🔁 Auto-delete bookings from before today
+    async function deletePastBookings() {
+      const today = new Date().toISOString().split("T")[0];
+
+      try {
+        const snapshot = await db.collection("bookings")
+          .where("date", "<", today)
+          .get();
+
+        const batch = db.batch();
+        snapshot.forEach(doc => batch.delete(doc.ref));
+
+        await batch.commit();
+        console.log("Expired bookings deleted.");
+      } catch (err) {
+        console.error("Failed to delete past bookings:", err);
+      }
+    }
+
+    // 🟢 Run cleanup on page load
+    window.addEventListener("load", deletePastBookings);
   </script>
-</body>
-</html>
