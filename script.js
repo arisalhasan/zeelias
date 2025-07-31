@@ -1,11 +1,16 @@
 // Disable Thursdays & Sundays
 const dateInput = document.getElementById("date");
+// Set min and max selectable dates (today to 1 month from today)
 const today = new Date();
 const maxDate = new Date();
 maxDate.setMonth(today.getMonth() + 1);
 
-dateInput.min = today.toISOString().split("T")[0];
-dateInput.max = maxDate.toISOString().split("T")[0];
+// Format as YYYY-MM-DD
+const formattedToday = today.toISOString().split("T")[0];
+const formattedMax = maxDate.toISOString().split("T")[0];
+
+dateInput.min = formattedToday;
+dateInput.max = formattedMax;
 
 const timeSelect = document.getElementById("time");
 const barberSelect = document.getElementById("barber");
@@ -16,14 +21,17 @@ dateInput.addEventListener("input", () => {
     alert("We are closed on Thursdays and Sundays. Please choose another date.");
     dateInput.value = "";
   } else {
-    loadAvailableTimeSlots();
+    loadAvailableTimeSlots(); // update available slots
   }
 });
 
 barberSelect.addEventListener("change", () => {
-  if (dateInput.value) loadAvailableTimeSlots();
+  if (dateInput.value) {
+    loadAvailableTimeSlots(); // update available slots
+  }
 });
 
+// All possible time slots (09:00 to 18:30, 30 min steps)
 const allSlots = [];
 for (let hour = 9; hour <= 18; hour++) {
   allSlots.push(`${hour.toString().padStart(2, '0')}:00`);
@@ -33,15 +41,17 @@ for (let hour = 9; hour <= 18; hour++) {
 async function loadAvailableTimeSlots() {
   const date = dateInput.value;
   const barber = barberSelect.value;
+
   if (!date || !barber) return;
 
   try {
-    const snapshot = await firebase.firestore().collection("bookings")
+    const snapshot = await db.collection("bookings")
       .where("date", "==", date)
       .where("barber", "==", barber)
       .get();
 
     const taken = snapshot.docs.map(doc => doc.data().time);
+
     const available = allSlots.filter(slot => !taken.includes(slot));
 
     timeSelect.innerHTML = '<option value="">Select Time</option>';
@@ -57,8 +67,7 @@ async function loadAvailableTimeSlots() {
   }
 }
 
-firebase.auth().useDeviceLanguage();
-
+// Handle Booking Form Submit
 document.getElementById("form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -74,78 +83,50 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     return;
   }
 
+  // ✅ Extra protection: block booking for past days
   const selectedDate = new Date(date);
   const now = new Date();
-  now.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0); // set to start of today
+
   if (selectedDate < now) {
     alert("You cannot book for a past date.");
     return;
   }
 
-  try {
-    await sendOTP(phone);
-    const userCode = prompt("Enter the OTP sent to your phone:");
-    const verified = await verifyOTP(userCode);
-    if (!verified) {
-      alert("OTP verification failed. Try again.");
-      return;
-    }
+  const bookingData = {
+    name,
+    phone,
+    service,
+    barber,
+    date,
+    time,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  };
 
-    const existing = await firebase.firestore().collection("bookings")
+  try {
+    // Check if a booking already exists for the same date, time, and barber
+    const existing = await db.collection("bookings")
       .where("date", "==", date)
       .where("barber", "==", barber)
       .where("time", "==", time)
       .get();
 
     if (!existing.empty) {
-      document.getElementById("message").textContent = "Sorry, that time is already booked.";
+      document.getElementById("message").textContent = "Sorry, that time is already booked. Please choose another.";
       document.getElementById("message").style.color = "red";
-      loadAvailableTimeSlots();
+      loadAvailableTimeSlots(); // Refresh available times
       return;
     }
 
-    await firebase.firestore().collection("bookings").add({
-      name,
-      phone,
-      service,
-      barber,
-      date,
-      time,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
+    // If no conflict, save the new booking
+    await db.collection("bookings").add(bookingData);
     document.getElementById("message").textContent = "Booking successful!";
     document.getElementById("message").style.color = "green";
     document.getElementById("form").reset();
-    loadAvailableTimeSlots();
+    loadAvailableTimeSlots(); // Refresh available times
   } catch (error) {
-    console.error("Booking failed:", error);
-    alert("Error: " + error.message);
+    console.error("Error booking:", error);
+    document.getElementById("message").textContent = "Error saving booking. Please try again.";
+    document.getElementById("message").style.color = "red";
   }
 });
-
-function sendOTP(phoneNumber) {
-  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-    size: 'invisible',
-    callback: () => console.log('reCAPTCHA resolved')
-  });
-
-  return firebase.auth().signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
-    .then(result => {
-      window.confirmationResult = result;
-      alert("OTP sent to your phone.");
-    })
-    .catch(error => {
-      console.error("sendOTP error:", error);
-      throw error;
-    });
-}
-
-function verifyOTP(code) {
-  return window.confirmationResult.confirm(code)
-    .then(() => true)
-    .catch(error => {
-      console.error("verifyOTP error:", error);
-      return false;
-    });
-}
