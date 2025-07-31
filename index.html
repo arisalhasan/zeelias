@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ze Elias Barbershop</title>
   <link rel="stylesheet" href="style.css" />
-
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <!-- ✅ Load Firebase SDKs BEFORE your custom scripts -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -21,6 +21,7 @@
       Book Now
     </button>
   </header>
+<div id="recaptcha-container"></div>
 
   <section id="booking" class="booking-form">
     <h2>Book an Appointment</h2>
@@ -55,55 +56,58 @@
   </footer>
 
   <script>
-    const sendOTP = firebase.functions().httpsCallable("sendOTP");
-    const verifyOTP = firebase.functions().httpsCallable("verifyOTP");
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-    document.getElementById("form").addEventListener("submit", async (e) => {
-      e.preventDefault();
+  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+    size: 'invisible',
+    callback: (response) => {
+      console.log("Recaptcha solved");
+    }
+  });
 
-      const name = document.getElementById("name").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const service = document.getElementById("service").value;
-      const barber = document.getElementById("barber").value;
-      const date = document.getElementById("date").value;
-      const time = document.getElementById("time").value;
+  document.getElementById("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-      if (!name || !phone || !service || !barber || !date || !time) {
-        alert("Please fill all fields.");
-        return;
-      }
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const service = document.getElementById("service").value;
+    const barber = document.getElementById("barber").value;
+    const date = document.getElementById("date").value;
+    const time = document.getElementById("time").value;
 
-      try {
-        const otpResponse = await sendOTP({ phone });
-        if (!otpResponse.data.success) {
-          alert("Failed to send OTP: " + otpResponse.data.error);
-          return;
-        }
+    if (!name || !phone || !service || !barber || !date || !time) {
+      alert("Please fill all fields.");
+      return;
+    }
 
-        const enteredOTP = prompt("We sent a verification code to your phone. Please enter it:");
+    try {
+      const formattedPhone = phone.startsWith("+") ? phone : `+357${phone}`; // adjust country code as needed
 
-        const verifyResponse = await verifyOTP({ phone, enteredOTP });
-        if (!verifyResponse.data.success) {
-          alert("Invalid verification code.");
-          return;
-        }
+      const confirmationResult = await auth.signInWithPhoneNumber(formattedPhone, window.recaptchaVerifier);
+      const otp = prompt("We sent a verification code to your phone. Please enter it:");
 
-        await db.collection("bookings").add({
-          name,
-          phone,
-          service,
-          barber,
-          date,
-          time
-        });
+      if (!otp) return alert("Verification cancelled.");
 
-        alert("Booking confirmed!");
-        document.getElementById("form").reset();
-      } catch (error) {
-        console.error("Booking error:", error);
-        alert("Something went wrong. Please try again.");
-      }
-    });
-  </script>
+      await confirmationResult.confirm(otp);
+
+      await db.collection("bookings").add({
+        name,
+        phone: formattedPhone,
+        service,
+        barber,
+        date,
+        time,
+      });
+
+      alert("Booking confirmed!");
+      document.getElementById("form").reset();
+    } catch (error) {
+      console.error("OTP verification failed:", error);
+      alert("OTP verification failed: " + error.message);
+    }
+  });
+</script>
 </body>
 </html>
