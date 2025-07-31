@@ -30,102 +30,86 @@
   </div>
 
   <script>
-  function checkPIN() {
-    const input = document.getElementById('pinInput').value;
-    if (input === '9110') {
-      localStorage.setItem('adminUnlocked', 'true');
+    function checkPIN() {
+      const input = document.getElementById('pinInput').value;
+      if (input === '9110') {
+        localStorage.setItem('adminUnlocked', 'true');
+        document.getElementById('pinGate').classList.add('hidden');
+        document.getElementById('adminPanel').classList.remove('hidden');
+      } else {
+        alert('Incorrect PIN');
+      }
+    }
+
+    if (localStorage.getItem('adminUnlocked') === 'true') {
       document.getElementById('pinGate').classList.add('hidden');
       document.getElementById('adminPanel').classList.remove('hidden');
-    } else {
-      alert('Incorrect PIN');
-    }
-  }
-
-  if (localStorage.getItem('adminUnlocked') === 'true') {
-    document.getElementById('pinGate').classList.add('hidden');
-    document.getElementById('adminPanel').classList.remove('hidden');
-  }
-
-  // Limit admin date picker: today to 30 days ahead, no Thu/Sun
-  const adminDateInput = document.getElementById("adminDate");
-  const today = new Date();
-  const maxDate = new Date();
-  maxDate.setDate(today.getDate() + 30);
-
-  const formattedToday = today.toISOString().split("T")[0];
-  const formattedMax = maxDate.toISOString().split("T")[0];
-  adminDateInput.min = formattedToday;
-  adminDateInput.max = formattedMax;
-
-  adminDateInput.addEventListener("input", () => {
-    const selectedDay = new Date(adminDateInput.value).getDay();
-    if (selectedDay === 0 || selectedDay === 4) {
-      alert("Ze Elias Barbershop is closed on Thursdays and Sundays.");
-      adminDateInput.value = "";
-    }
-  });
-
-  function loadBookings() {
-    const date = document.getElementById("adminDate").value;
-    const barber = document.getElementById("adminBarber").value;
-    const resultsDiv = document.getElementById("adminResults");
-
-    if (!date || !barber) {
-      alert("Select both date and barber.");
-      return;
     }
 
-    resultsDiv.innerHTML = '<p>Loading...</p>';
+    function loadBookings() {
+      const date = document.getElementById("adminDate").value;
+      const barber = document.getElementById("adminBarber").value;
+      const resultsDiv = document.getElementById("adminResults");
 
-    db.collection("bookings")
-      .where("date", "==", date)
-      .where("barber", "==", barber)
-      .orderBy("time")
-      .get()
-      .then(snapshot => {
-        if (snapshot.empty) {
-          resultsDiv.innerHTML = '<p>No bookings found.</p>';
-          return;
-        }
+      if (!date || !barber) {
+        alert("Select both date and barber.");
+        return;
+      }
 
-        let html = '';
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          html += `<div class='bg-gray-800 p-4 rounded-lg border border-gray-700'>
-            <p><strong>${data.time}</strong></p>
-            <p>${data.name}</p>
-            <p>${data.phone}</p>
-            <p>${data.service}</p>
-          </div>`;
+      resultsDiv.innerHTML = '<p>Loading...</p>';
+
+      db.collection("bookings")
+        .where("date", "==", date)
+        .where("barber", "==", barber)
+        .orderBy("time")
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            resultsDiv.innerHTML = '<p>No bookings found.</p>';
+            return;
+          }
+
+          let html = '';
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            html += `<div class='bg-gray-800 p-4 rounded-lg border border-gray-700'>
+              <p><strong>${data.time}</strong></p>
+              <p>${data.name}</p>
+              <p>${data.phone}</p>
+              <p>${data.service}</p>
+            </div>`;
+          });
+
+          resultsDiv.innerHTML = html;
+        })
+        .catch(err => {
+          console.error("Error loading bookings:", err);
+          resultsDiv.innerHTML = '<p class="text-red-500">Error loading bookings. Check console for details.</p>';
         });
-
-        resultsDiv.innerHTML = html;
-      })
-      .catch(err => {
-        console.error("Error loading bookings:", err);
-        resultsDiv.innerHTML = '<p class="text-red-500">Error loading bookings. Check console for details.</p>';
-      });
-  }
-
-  // 🔁 Auto-delete bookings from before today
-  async function deletePastBookings() {
-    const today = new Date().toISOString().split("T")[0];
-
-    try {
-      const snapshot = await db.collection("bookings")
-        .where("date", "<", today)
-        .get();
-
-      const batch = db.batch();
-      snapshot.forEach(doc => batch.delete(doc.ref));
-
-      await batch.commit();
-      console.log("Expired bookings deleted.");
-    } catch (err) {
-      console.error("Failed to delete past bookings:", err);
     }
-  }
 
-  // 🟢 Run cleanup on page load
-  window.addEventListener("load", deletePastBookings);
-</script>
+    // 🔁 Auto-delete bookings from before today
+    async function deletePastBookings() {
+      const today = new Date().toISOString().split("T")[0];
+
+      try {
+        const snapshot = await db.collection("bookings")
+          .where("date", "<", today)
+          .get();
+
+        const batch = db.batch();
+        snapshot.forEach(doc => batch.delete(doc.ref));
+
+        await batch.commit();
+        console.log("Expired bookings deleted.");
+      } catch (err) {
+        console.error("Failed to delete past bookings:", err);
+      }
+    }
+
+    // 🟢 Run cleanup on page load
+    window.addEventListener("load", deletePastBookings);
+  </script>
+
+</body>
+</html>
