@@ -6,12 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ze Elias Barbershop</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <!-- ✅ Load Firebase SDKs BEFORE your custom scripts -->
+
+  <!-- ✅ Firebase Core SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-functions.js"></script>
+
+  <!-- ✅ Your Firebase Config + Script -->
   <script defer src="firebaseConfig.js"></script>
+  <script defer src="script.js"></script>
 </head>
 <body>
   <header class="hero">
@@ -21,7 +23,6 @@
       Book Now
     </button>
   </header>
-<div id="recaptcha-container"></div>
 
   <section id="booking" class="booking-form">
     <h2>Book an Appointment</h2>
@@ -54,60 +55,5 @@
     <p><strong>Address:</strong> Idaliou, Poli Chrysochous 8820, Cyprus</p>
     <p><strong>Phone:</strong> +357 96 395320</p>
   </footer>
-
-  <script>
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-
-  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-    size: 'invisible',
-    callback: (response) => {
-      console.log("Recaptcha solved");
-    }
-  });
-
-  document.getElementById("form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const service = document.getElementById("service").value;
-    const barber = document.getElementById("barber").value;
-    const date = document.getElementById("date").value;
-    const time = document.getElementById("time").value;
-
-    if (!name || !phone || !service || !barber || !date || !time) {
-      alert("Please fill all fields.");
-      return;
-    }
-
-    try {
-      const formattedPhone = phone.startsWith("+") ? phone : `+357${phone}`; // adjust country code as needed
-
-      const confirmationResult = await auth.signInWithPhoneNumber(formattedPhone, window.recaptchaVerifier);
-      const otp = prompt("We sent a verification code to your phone. Please enter it:");
-
-      if (!otp) return alert("Verification cancelled.");
-
-      await confirmationResult.confirm(otp);
-
-      await db.collection("bookings").add({
-        name,
-        phone: formattedPhone,
-        service,
-        barber,
-        date,
-        time,
-      });
-
-      alert("Booking confirmed!");
-      document.getElementById("form").reset();
-    } catch (error) {
-      console.error("OTP verification failed:", error);
-      alert("OTP verification failed: " + error.message);
-    }
-  });
-</script>
 </body>
 </html>
