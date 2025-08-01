@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Ze Elias Barbershop</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script defer src="firebaseConfig.js"></script>
+</head>
+<body class="bg-gray-950 text-white font-serif p-6">
+  <div id="pinGate" class="max-w-md mx-auto bg-gray-900 p-6 rounded-xl shadow-lg">
+    <h2 class="text-2xl mb-4 text-gold">Admin Access</h2>
+    <input type="password" id="pinInput" placeholder="Enter PIN" class="w-full p-3 mb-4 rounded bg-gray-800 text-white border border-gray-700" />
+    <button onclick="checkPIN()" class="w-full bg-yellow-500 text-black py-2 rounded hover:bg-yellow-400">Enter</button>
+  </div>
+
+  <div id="adminPanel" class="hidden max-w-xl mx-auto mt-10">
+    <h2 class="text-2xl mb-4 text-yellow-400">View Bookings</h2>
+    <input type="date" id="adminDate" class="w-full p-3 mb-3 rounded bg-gray-800 text-white border border-gray-700">
+    <select id="adminBarber" class="w-full p-3 mb-3 rounded bg-gray-800 text-white border border-gray-700">
+      <option value="">Select Barber</option>
+      <option value="Elias">Elias</option>
+      <option value="George">George</option>
+      <option value="Charalambos">Charalambos</option>
+    </select>
+    <button onclick="loadBookings()" class="w-full bg-yellow-500 text-black py-2 rounded hover:bg-yellow-400">Load Bookings</button>
+    <div id="adminResults" class="mt-6 space-y-4"></div>
+  </div>
+
+  <script>
+    function checkPIN() {
+      const input = document.getElementById('pinInput').value;
+      if (input === '9110') {
+        localStorage.setItem('adminUnlocked', 'true');
+        document.getElementById('pinGate').classList.add('hidden');
+        document.getElementById('adminPanel').classList.remove('hidden');
+      } else {
+        alert('Incorrect PIN');
+      }
+    }
+
+    if (localStorage.getItem('adminUnlocked') === 'true') {
+      document.getElementById('pinGate').classList.add('hidden');
+      document.getElementById('adminPanel').classList.remove('hidden');
+    }
+
+    function loadBookings() {
+      const date = document.getElementById("adminDate").value;
+      const barber = document.getElementById("adminBarber").value;
+      const resultsDiv = document.getElementById("adminResults");
+
+      if (!date || !barber) {
+        alert("Select both date and barber.");
+        return;
+      }
+
+      resultsDiv.innerHTML = '<p>Loading...</p>';
+
+      db.collection("bookings")
+        .where("date", "==", date)
+        .where("barber", "==", barber)
+        .orderBy("time")
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            resultsDiv.innerHTML = '<p>No bookings found.</p>';
+            return;
+          }
+
+          let html = '';
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            html += `<div class='bg-gray-800 p-4 rounded-lg border border-gray-700'>
+              <p><strong>${data.time}</strong></p>
+              <p>${data.name}</p>
+              <p>${data.phone}</p>
+              <p>${data.service}</p>
+            </div>`;
+          });
+
+          resultsDiv.innerHTML = html;
+        })
+        .catch(err => {
+          console.error("Error loading bookings:", err);
+          resultsDiv.innerHTML = '<p class="text-red-500">Error loading bookings. Check console for details.</p>';
+        });
+    }
+
+    // 🔁 Auto-delete bookings from before today
+    async function deletePastBookings() {
+      const today = new Date().toISOString().split("T")[0];
+
+      try {
+        const snapshot = await db.collection("bookings")
+          .where("date", "<", today)
+          .get();
+
+        const batch = db.batch();
+        snapshot.forEach(doc => batch.delete(doc.ref));
+
+        await batch.commit();
+        console.log("Expired bookings deleted.");
+      } catch (err) {
+        console.error("Failed to delete past bookings:", err);
+      }
+    }
+
+    // 🟢 Run cleanup on page load
+    window.addEventListener("load", deletePastBookings);
+  </script>
+
+</body>
+</html>
