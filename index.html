@@ -1,29 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ze Elias Barbershop</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- ✅ Firebase SDKs -->
+  <link rel="stylesheet" href="style.css">
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-  <!-- ✅ Custom Firebase config and script -->
   <script defer src="firebaseConfig.js"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
-  <header class="hero">
-    <h1>Ze Elias Barbershop</h1>
-    <p>Precision cuts & classic style. Book your appointment below.</p>
-    <button onclick="document.getElementById('booking').scrollIntoView({ behavior: 'smooth' })">
-      Book Now
-    </button>
-  </header>
+  <div class="hero">
+    <div class="overlay"></div>
+    <div class="content">
+      <h1>Ze Elias Barbershop</h1>
+      <p>Precision Cuts. Classic Style. Book Your Look.</p>
+      <button onclick="document.getElementById('booking').scrollIntoView({ behavior: 'smooth' })">Book Now</button>
+    </div>
+  </div>
 
   <section id="booking" class="booking-form">
     <h2>Book an Appointment</h2>
