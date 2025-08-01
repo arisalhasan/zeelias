@@ -1,9 +1,7 @@
 // firebaseConfig.js
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
 
 // Your Firebase project configuration
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey: "AIzaSyDqdcv_LEGiqvJrxomoHMO902Cx8zmiiVY",
   authDomain: "zeeliasbookings.firebaseapp.com",
   databaseURL: "https://zeeliasbookings-default-rtdb.europe-west1.firebasedatabase.app",
@@ -15,10 +13,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 
 // Initialize Firestore
-const db = getFirestore(app);
-
-// Export Firestore instance
-export { db };
+const db = firebase.firestore();

@@ -1,5 +1,6 @@
 // Disable Thursdays & Sundays
 const dateInput = document.getElementById("date");
+
 // Set min and max selectable dates (today to 1 month from today)
 const today = new Date();
 const maxDate = new Date();
@@ -16,22 +17,34 @@ const timeSelect = document.getElementById("time");
 const barberSelect = document.getElementById("barber");
 
 dateInput.addEventListener("input", () => {
-  const day = new Date(dateInput.value).getDay();
+  const selected = new Date(dateInput.value);
+  selected.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const day = selected.getDay();
+  if (selected < now) {
+    alert("You cannot book for a past date.");
+    dateInput.value = "";
+    return;
+  }
+
   if (day === 0 || day === 4) {
     alert("We are closed on Thursdays and Sundays. Please choose another date.");
     dateInput.value = "";
-  } else {
-    loadAvailableTimeSlots(); // update available slots
+    return;
   }
+
+  loadAvailableTimeSlots();
 });
 
 barberSelect.addEventListener("change", () => {
   if (dateInput.value) {
-    loadAvailableTimeSlots(); // update available slots
+    loadAvailableTimeSlots();
   }
 });
 
-// All possible time slots (09:00 to 18:30, 30 min steps)
+// All possible time slots (09:00 to 18:30, every 30 minutes)
 const allSlots = [];
 for (let hour = 9; hour <= 18; hour++) {
   allSlots.push(`${hour.toString().padStart(2, '0')}:00`);
@@ -51,7 +64,6 @@ async function loadAvailableTimeSlots() {
       .get();
 
     const taken = snapshot.docs.map(doc => doc.data().time);
-
     const available = allSlots.filter(slot => !taken.includes(slot));
 
     timeSelect.innerHTML = '<option value="">Select Time</option>';
@@ -61,6 +73,13 @@ async function loadAvailableTimeSlots() {
       option.textContent = time;
       timeSelect.appendChild(option);
     });
+
+    if (available.length === 0) {
+      const option = document.createElement("option");
+      option.value = "";
+      option.textContent = "No available times";
+      timeSelect.appendChild(option);
+    }
   } catch (err) {
     console.error("Error loading available slots:", err);
     timeSelect.innerHTML = '<option value="">Error loading times</option>';
@@ -83,16 +102,6 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     return;
   }
 
-  // ✅ Extra protection: block booking for past days
-  const selectedDate = new Date(date);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0); // set to start of today
-
-  if (selectedDate < now) {
-    alert("You cannot book for a past date.");
-    return;
-  }
-
   const bookingData = {
     name,
     phone,
@@ -104,7 +113,6 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   };
 
   try {
-    // Check if a booking already exists for the same date, time, and barber
     const existing = await db.collection("bookings")
       .where("date", "==", date)
       .where("barber", "==", barber)
@@ -114,16 +122,15 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     if (!existing.empty) {
       document.getElementById("message").textContent = "Sorry, that time is already booked. Please choose another.";
       document.getElementById("message").style.color = "red";
-      loadAvailableTimeSlots(); // Refresh available times
+      loadAvailableTimeSlots();
       return;
     }
 
-    // If no conflict, save the new booking
     await db.collection("bookings").add(bookingData);
     document.getElementById("message").textContent = "Booking successful!";
     document.getElementById("message").style.color = "green";
     document.getElementById("form").reset();
-    loadAvailableTimeSlots(); // Refresh available times
+    loadAvailableTimeSlots();
   } catch (error) {
     console.error("Error booking:", error);
     document.getElementById("message").textContent = "Error saving booking. Please try again.";
